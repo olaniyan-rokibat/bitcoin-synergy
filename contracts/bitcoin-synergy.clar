@@ -38,3 +38,55 @@
 (define-constant ERR-ALREADY-VOTED (err u105))
 (define-constant ERR-INSUFFICIENT-FUNDS (err u106))
 (define-constant ERR-INVALID-AMOUNT (err u107))
+
+;; data vars
+(define-data-var total-members uint u0)
+(define-data-var total-proposals uint u0)
+(define-data-var treasury-balance uint u0)
+
+;; data maps
+(define-map members principal 
+  {
+    reputation: uint,      ;; Governance weight multiplier
+    stake: uint,           ;; STX commitment
+    last-interaction: uint  ;; Block height of last activity
+  }
+)
+
+(define-map proposals uint 
+  {
+    creator: principal,
+    title: (string-ascii 50),
+    description: (string-utf8 500),
+    amount: uint,
+    yes-votes: uint,       ;; Reputation-weighted approvals
+    no-votes: uint,        ;; Reputation-weighted rejects
+    status: (string-ascii 10),
+    created-at: uint,
+    expires-at: uint       ;; Block height expiration
+  }
+)
+
+(define-map votes {proposal-id: uint, voter: principal} bool)
+
+(define-map collaborations uint 
+  {
+    partner-dao: principal,  ;; External DAO contract
+    proposal-id: uint,       ;; Linked proposal ID
+    status: (string-ascii 10)
+  }
+)
+
+;; public functions
+
+;; Membership management
+(define-public (join-dao)
+  (let (
+    (caller tx-sender)
+  )
+    (asserts! (not (is-member caller)) ERR-ALREADY-MEMBER)
+    (map-set members caller {reputation: u1, stake: u0, last-interaction: stacks-block-height})
+    (var-set total-members (+ (var-get total-members) u1))
+    (ok true)
+  )
+)
