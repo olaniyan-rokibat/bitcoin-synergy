@@ -281,3 +281,43 @@
     (ok collaboration-id)
   )
 )
+
+(define-public (accept-collaboration (collaboration-id uint))
+  (let (
+    (caller tx-sender)
+  )
+    (asserts! (is-valid-collaboration-id collaboration-id) ERR-INVALID-PROPOSAL)
+    (match (map-get? collaborations collaboration-id)
+      collaboration 
+      (begin
+        (asserts! (is-eq caller (get partner-dao collaboration)) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq (get status collaboration) "proposed") ERR-INVALID-PROPOSAL)
+        ;; Add additional validation before setting status
+        (asserts! (is-valid-collaboration-id collaboration-id) ERR-INVALID-PROPOSAL)
+        (map-set collaborations collaboration-id (merge collaboration {status: "accepted"}))
+        (ok true)
+      )
+      ERR-INVALID-PROPOSAL
+    )
+  )
+)
+
+;; read only functions
+(define-read-only (get-treasury-balance)
+  (ok (var-get treasury-balance))
+)
+
+(define-read-only (get-member-reputation (user principal))
+  (match (map-get? members user)
+    member-data (ok (get reputation member-data))
+    ERR-NOT-MEMBER
+  )
+)
+
+(define-read-only (get-proposal (proposal-id uint))
+  (ok (unwrap! (map-get? proposals proposal-id) ERR-INVALID-PROPOSAL))
+)
+
+(define-read-only (get-member (user principal))
+  (ok (unwrap! (map-get? members user) ERR-NOT-MEMBER))
+)
