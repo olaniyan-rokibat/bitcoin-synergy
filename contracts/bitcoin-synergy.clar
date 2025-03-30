@@ -242,3 +242,42 @@
     )
   )
 )
+
+;; Treasury management
+(define-public (donate-to-treasury (amount uint))
+  (let (
+    (caller tx-sender)
+  )
+    (asserts! (> amount u0) ERR-INVALID-AMOUNT)
+    (try! (stx-transfer? amount caller (as-contract tx-sender)))
+    (var-set treasury-balance (+ (var-get treasury-balance) amount))
+    (if (is-member caller)
+      (begin
+        (try! (update-member-reputation caller 2)) ;; Increase reputation for donating
+        (ok true)
+      )
+      (ok true)
+    )
+  )
+)
+
+;; Cross-DAO collaboration
+(define-public (propose-collaboration (partner-dao principal) (proposal-id uint))
+  (let (
+    (caller tx-sender)
+    (collaboration-id (+ (var-get total-proposals) u1))
+  )
+    (asserts! (is-member caller) ERR-NOT-MEMBER)
+    (asserts! (is-active-proposal proposal-id) ERR-INVALID-PROPOSAL)
+    (asserts! (not (is-eq partner-dao caller)) ERR-INVALID-PROPOSAL)
+    (map-set collaborations collaboration-id
+      {
+        partner-dao: partner-dao,
+        proposal-id: proposal-id,
+        status: "proposed"
+      }
+    )
+    (var-set total-proposals collaboration-id)
+    (ok collaboration-id)
+  )
+)
