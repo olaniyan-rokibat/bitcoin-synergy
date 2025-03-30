@@ -321,3 +321,43 @@
 (define-read-only (get-member (user principal))
   (ok (unwrap! (map-get? members user) ERR-NOT-MEMBER))
 )
+
+(define-read-only (get-total-members)
+  (ok (var-get total-members))
+)
+
+(define-read-only (get-total-proposals)
+  (ok (var-get total-proposals))
+)
+
+;; private functions
+(define-private (is-member (user principal))
+  (match (map-get? members user)
+    member-data true
+    false
+  )
+)
+
+(define-private (is-active-proposal (proposal-id uint))
+  (match (map-get? proposals proposal-id)
+    proposal (and 
+      (< stacks-block-height (get expires-at proposal))
+      (is-eq (get status proposal) "active")
+    )
+    false
+  )
+)
+
+(define-private (is-valid-proposal-id (proposal-id uint))
+  (match (map-get? proposals proposal-id)
+    proposal true
+    false
+  )
+)
+
+(define-private (is-valid-collaboration-id (collaboration-id uint))
+  (match (map-get? collaborations collaboration-id)
+    collaboration true
+    false
+  )
+)
